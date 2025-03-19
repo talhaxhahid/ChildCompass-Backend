@@ -8,7 +8,7 @@ const router = express.Router();
 
 // Utility function to generate 5-digit random code for verification
 const generateVerificationCode = () => {
-    return Math.floor(10000 + Math.random() * 90000).toString(); // 5-digit number
+    return Math.floor(1000 + Math.random() * 9000).toString(); // 5-digit number
 };
 
 // Utility function to generate JWT token
@@ -49,7 +49,7 @@ router.post('/register', async (req, res) => {
             from: process.env.EMAIL,
             to: email,
             subject: 'Verify Your Email',
-            text: `Your 5-digit verification code is: ${verificationCode}. It will expire in 10 minutes.`,
+            text: `Your 4-digit verification code is: ${verificationCode}. It will expire in 10 minutes.`,
         };
 
         await transporter.sendMail(mailOptions);
@@ -63,20 +63,37 @@ router.post('/register', async (req, res) => {
 // Verify Parent Email with 5-Digit Code Route
 router.post('/verify-email', async (req, res) => {
     const { email, verificationCode } = req.body;
-
+    console.log("Received verification request for email:", email);
     try {
-        const parent = await Parent.findOne({ email: email });
-        if (!parent) return res.status(404).json({ message: 'Parent not found' });
+        console.log("Received verification request for email:", email);
+        console.log("Provided verification code:", verificationCode);
 
-        if (parent.verifiedEmail) return res.status(400).json({ message: 'Email already verified' });
+        const parent = await Parent.findOne({ email: email });
+        if (!parent) {
+            console.log("Parent not found in database.");
+            return res.status(404).json({ message: 'Parent not found' });
+        }
+
+        console.log("Parent found:", parent);
+        console.log("Stored verification code:", parent.verificationCode);
+        console.log("Verification code expiration:", parent.verificationCodeExpiration);
+        console.log("Current time:", new Date());
+
+        if (parent.verifiedEmail) {
+            console.log("Email is already verified.");
+            return res.status(400).json({ message: 'Email already verified' });
+        }
 
         if (new Date() > parent.verificationCodeExpiration) {
+            console.log("Verification code has expired.");
             return res.status(400).json({ message: 'Verification code has expired' });
         }
 
-        if (parent.verificationCode !== verificationCode) {
+        if (String(parent.verificationCode) !== String(verificationCode)) {
+            console.log("Invalid verification code provided.");
             return res.status(400).json({ message: 'Invalid verification code' });
         }
+        
 
         // Mark parent as verified
         parent.verifiedEmail = true;
@@ -84,9 +101,11 @@ router.post('/verify-email', async (req, res) => {
         parent.verificationCodeExpiration = null; // Clear the expiration time
         await parent.save();
 
-        res.status(200).json({ message: 'Email verified successfully!' });
+        console.log("Email verification successful for:", email);
+        return res.status(200).json({ message: 'Email verified successfully!' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        console.error("Error during email verification:", err);
+        return res.status(500).json({ message: err.message });
     }
 });
 
