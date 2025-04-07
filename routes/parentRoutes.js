@@ -6,6 +6,65 @@ const Child = require('../models/child');
 const nodemailer = require('nodemailer');
 const router = express.Router();
 
+const authenticate = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Unauthorized: No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1]; // Extract token after 'Bearer'
+    
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify token
+        req.user = decoded; // Attach decoded user info (e.g., id) to req object
+        next(); // Move to the next middleware or route handler
+    } catch (err) {
+        res.status(401).json({ message: 'Unauthorized: Invalid token' });
+    }
+};
+
+router.get('/parent-details', authenticate, async (req, res) => {
+    try {
+        const parent = await Parent.findById(req.user.id);
+        if (!parent) return res.status(404).json({ message: 'Parent not found' });
+        
+        if(!parent.verifiedEmail){
+        // Generate a 5-digit verification code and set expiration time
+        const verificationCode = generateVerificationCode();
+        const codeExpiration = new Date();
+        codeExpiration.setMinutes(codeExpiration.getMinutes() + 10); // Code expires in 10 minutes
+
+        parent.verificationCode = verificationCode;
+        parent.verificationCodeExpiration = codeExpiration;
+        await parent.save();
+
+        // Send verification email with the 5-digit code
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: parent.email,
+            subject: 'Verify Your Email',
+            text: `Your 4-digit verification code is: ${verificationCode}. It will expire in 10 minutes.`,
+        };
+
+        await transporter.sendMail(mailOptions);
+             return res.status(405).json({ message: 'Email Not Verified', parent });
+            }
+        if(parent.childConnectionStrings.length==0) return res.status(406).json({ message: 'No Child Connected', parent });
+        res.status(200).json({ message: 'Access granted', parent });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 // Utility function to generate 5-digit random code for verification
 const generateVerificationCode = () => {
     return Math.floor(1000 + Math.random() * 9000).toString(); // 5-digit number
@@ -53,8 +112,8 @@ router.post('/register', async (req, res) => {
         };
 
         await transporter.sendMail(mailOptions);
-
-        res.status(201).json({ message: 'Registration successful! Please check your email for a 5-digit code.' });
+        const token = generateToken(newParent._id);
+        res.status(201).json({ message: 'Registration successful! Please check your email for a 5-digit code.',token });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -120,10 +179,40 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, parent.password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-        if (!parent.verifiedEmail) return res.status(400).json({ message: 'Please verify your email first' });
+        if (!parent.verifiedEmail){
+            // Generate a 5-digit verification code and set expiration time
+        const verificationCode = generateVerificationCode();
+        const codeExpiration = new Date();
+        codeExpiration.setMinutes(codeExpiration.getMinutes() + 10); // Code expires in 10 minutes
+
+        parent.verificationCode = verificationCode;
+        parent.verificationCodeExpiration = codeExpiration;
+        await parent.save();
+
+        // Send verification email with the 5-digit code
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: email,
+            subject: 'Verify Your Email',
+            text: `Your 4-digit verification code is: ${verificationCode}. It will expire in 10 minutes.`,
+        };
+
+        await transporter.sendMail(mailOptions);
+        const token = generateToken(parent._id);
+        return res.status(200).json({ message: 'verifyEmail' ,token,parent});}
+        else{
 
         const token = generateToken(parent._id); // Generate JWT Token
-        res.status(200).json({ message: 'Login successful', token });
+        res.status(200).json({ message: 'Login successful', token,parent });
+    }
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
