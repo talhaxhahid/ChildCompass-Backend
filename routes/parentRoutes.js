@@ -24,45 +24,67 @@ const authenticate = (req, res, next) => {
 };
 
 router.get('/parent-details', authenticate, async (req, res) => {
+    console.log('GET /parent-details API hit');
+
     try {
+        console.log(`Authenticated user ID: ${req.user.id}`);
+
         const parent = await Parent.findById(req.user.id);
-        if (!parent) return res.status(404).json({ message: 'Parent not found' });
-        
-        if(!parent.verifiedEmail){
-        // Generate a 5-digit verification code and set expiration time
-        const verificationCode = generateVerificationCode();
-        const codeExpiration = new Date();
-        codeExpiration.setMinutes(codeExpiration.getMinutes() + 10); // Code expires in 10 minutes
+        if (!parent) {
+            console.log('Parent not found for given ID');
+            return res.status(404).json({ message: 'Parent not found' });
+        }
 
-        parent.verificationCode = verificationCode;
-        parent.verificationCodeExpiration = codeExpiration;
-        await parent.save();
+        console.log('Parent found:', parent.email);
 
-        // Send verification email with the 5-digit code
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: process.env.EMAIL,
-                pass: process.env.EMAIL_PASSWORD,
-            },
-        });
+        if (!parent.verifiedEmail) {
+            console.log('Parent email not verified, generating verification code');
 
-        const mailOptions = {
-            from: process.env.EMAIL,
-            to: parent.email,
-            subject: 'Verify Your Email',
-            text: `Your 4-digit verification code is: ${verificationCode}. It will expire in 10 minutes.`,
-        };
+            const verificationCode = generateVerificationCode();
+            const codeExpiration = new Date();
+            codeExpiration.setMinutes(codeExpiration.getMinutes() + 10);
 
-        await transporter.sendMail(mailOptions);
-             return res.status(405).json({ message: 'Email Not Verified', parent });
-            }
-        if(parent.childConnectionStrings.length==0) return res.status(406).json({ message: 'No Child Connected', parent });
+            parent.verificationCode = verificationCode;
+            parent.verificationCodeExpiration = codeExpiration;
+            await parent.save();
+
+            console.log(`Verification code generated: ${verificationCode}, expires at: ${codeExpiration}`);
+
+            const transporter = nodemailer.createTransport({
+                service: 'Gmail',
+                auth: {
+                    user: process.env.EMAIL,
+                    pass: process.env.EMAIL_PASSWORD,
+                },
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL,
+                to: parent.email,
+                subject: 'Verify Your Email',
+                text: `Your 4-digit verification code is: ${verificationCode}. It will expire in 10 minutes.`,
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log('Verification email sent to:', parent.email);
+
+            return res.status(405).json({ message: 'Email Not Verified', parent });
+        }
+
+        if (parent.childConnectionStrings.length === 0) {
+            console.log('Parent has no child connections');
+            return res.status(406).json({ message: 'No Child Connected', parent });
+        }
+
+        console.log('Parent verified and has child connections. Access granted.');
         res.status(200).json({ message: 'Access granted', parent });
+
     } catch (err) {
+        console.error('Error in /parent-details API:', err.message);
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 // Utility function to generate 5-digit random code for verification
