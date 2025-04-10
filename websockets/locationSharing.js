@@ -14,7 +14,7 @@ function locationWebSocket(server) {
 
             if (data.type === 'register_child') {
                 childs[data.childId] = { ws, location: null };
-                console.log("Child Registered for Location Sharing : "+data.childId.toString());
+                console.log("Child Registered for Location Sharing : "+data.childId);
             } else if (data.type === 'location_update') {
                 console.log(data);
                 if (childs[data.childId]) {
