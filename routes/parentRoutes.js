@@ -273,4 +273,33 @@ router.post('/add-child', async (req, res) => {
     }
 });
 
+
+// Remove Child Connection String from Parent Route
+router.post('/remove-child', async (req, res) => {
+    const { email, connectionString } = req.body;
+
+    try {
+        const parent = await Parent.findOne({ email });
+
+        if (!parent) return res.status(404).json({ message: 'Parent not found' });
+
+        // Check if the connection string exists in the parent's list
+        const index = parent.childConnectionStrings.indexOf(connectionString);
+        if (index === -1) {
+            console.log(connectionString);
+            return res.status(400).json({ message: 'This child connection is not associated with your account' });
+        }
+
+        // Remove the connection string
+        parent.childConnectionStrings.splice(index, 1);
+        await parent.save();
+        console.log('Updated Parent after removal:', parent);
+
+        res.status(200).json({ message: 'Child connection string removed successfully' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 module.exports = router;

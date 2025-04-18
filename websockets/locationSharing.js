@@ -8,13 +8,15 @@ function locationWebSocket(server) {
 
     wss.on('connection', (ws) => {
         console.log('Location WebSocket connected');
-
+        
         ws.on('message', (message) => {
             const data = JSON.parse(message);
 
             if (data.type === 'register_child') {
                 childs[data.childId] = { ws, location: null };
                 console.log("Child Registered for Location Sharing : "+data.childId);
+                console.log("Active Childs are : ");
+                console.log(childs);
             } else if (data.type === 'location_update') {
                 console.log(data);
                 if (childs[data.childId]) {
@@ -44,6 +46,9 @@ function locationWebSocket(server) {
                     }));
                     childs[data.targetchildId].location = null;
                 }
+                
+                console.log("Active Parents are: ");
+                console.log(parents);
             }
         });
 
