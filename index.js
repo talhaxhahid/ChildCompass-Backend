@@ -6,6 +6,9 @@ const parentRoutes = require('./routes/parentRoutes');
 const cors = require('cors');
 const http = require('http');
 const locationWebSocket = require('./websockets/locationSharing');
+const activeStatusWebSocket = require('./websockets/activeStatus');
+// In your index.js
+const WebSocket = require('ws');
 
 dotenv.config();
 
@@ -36,9 +39,32 @@ app.get('/', (req, res) => {
 // Create HTTP server from Express app
 const server = http.createServer(app);
 
-// Start WebSocket Server
-locationWebSocket(server);
 
+
+// Create separate WebSocket servers with noServer
+const locationWSS = new WebSocket.Server({ noServer: true });
+const activeStatusWSS = new WebSocket.Server({ noServer: true });
+
+// Then pass these to your functions
+locationWebSocket(locationWSS);
+activeStatusWebSocket(activeStatusWSS);
+
+// Handle upgrade requests
+server.on('upgrade', (request, socket, head) => {
+  const pathname = request.url;
+  
+  if (pathname === '/location') {
+    locationWSS.handleUpgrade(request, socket, head, (ws) => {
+      locationWSS.emit('connection', ws, request);
+    });
+  } else if (pathname === '/activeStatus') {
+    activeStatusWSS.handleUpgrade(request, socket, head, (ws) => {
+      activeStatusWSS.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
 // Start HTTP server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => console.log(`Server is running on port ${PORT}`));
