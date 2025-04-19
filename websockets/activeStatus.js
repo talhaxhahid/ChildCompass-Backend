@@ -89,7 +89,7 @@ function activeStatusWebSocket(wss) {
         });
 
         ws.on('close', () => {
-            console.log('WebSocket disconnected');
+            console.log('ActiveStatus WebSocket disconnected');
 
             if (registeredChildId) {
                 if (childs[registeredChildId]) {

@@ -1,6 +1,25 @@
 const WebSocket = require('ws');
 
 function locationWebSocket(wss) {
+
+    function getCurrentTimeInAMPM() {
+        const now = new Date();
+        let hours = now.getHours();
+        const minutes = now.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+      
+        // Convert to 12-hour format
+        hours = hours % 12;
+        hours = hours ? hours : 12; // 0 should be 12
+      
+        // Add leading zero to minutes if needed
+        const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+      
+        return `${hours}:${formattedMinutes} ${ampm}`;
+      }
+      
+
+      
     
 
     let childs = {};
@@ -21,7 +40,8 @@ function locationWebSocket(wss) {
                         latitude: data.latitude,
                         longitude: data.longitude,
                         speed:data.speed,
-                        maxSpeed:data.maxSpeed
+                        maxSpeed:data.maxSpeed,
+                        time:getCurrentTimeInAMPM()
                     };
                     for (let parentId in parents) {
                         if (parents[parentId].targetchildId.includes(data.childId)) {
@@ -31,7 +51,8 @@ function locationWebSocket(wss) {
                                 latitude: data.latitude,
                                 longitude: data.longitude,
                                 speed:data.speed,
-                                maxSpeed:data.maxSpeed
+                                maxSpeed:data.maxSpeed,
+                                time:getCurrentTimeInAMPM(),
                             }));
                             
                         }
@@ -59,7 +80,8 @@ function locationWebSocket(wss) {
                         latitude: childs[data.targetchildId].location.latitude,
                         longitude: childs[data.targetchildId].location.longitude,
                         speed:childs[data.targetchildId].location.speed,
-                        maxSpeed:childs[data.targetchildId].location.maxSpeed
+                        maxSpeed:childs[data.targetchildId].location.maxSpeed,
+                        time:childs[data.targetchildId].location.time
                     }));
                 }
                 else{
@@ -69,7 +91,8 @@ function locationWebSocket(wss) {
                         latitude: 31.5204,
                         longitude: 74.3587,
                         speed:1,
-                        maxSpeed:10
+                        maxSpeed:10,
+                        time:'never'
                     }));
 
                 }
