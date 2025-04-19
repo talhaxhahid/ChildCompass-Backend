@@ -20,7 +20,8 @@ function locationWebSocket(wss) {
                     childs[data.childId].location = {
                         latitude: data.latitude,
                         longitude: data.longitude,
-                        speed:data.speed
+                        speed:data.speed,
+                        maxSpeed:data.maxSpeed
                     };
                     for (let parentId in parents) {
                         if (parents[parentId].targetchildId.includes(data.childId)) {
@@ -30,6 +31,7 @@ function locationWebSocket(wss) {
                                 latitude: data.latitude,
                                 longitude: data.longitude,
                                 speed:data.speed,
+                                maxSpeed:data.maxSpeed
                             }));
                             
                         }
@@ -57,6 +59,7 @@ function locationWebSocket(wss) {
                         latitude: childs[data.targetchildId].location.latitude,
                         longitude: childs[data.targetchildId].location.longitude,
                         speed:childs[data.targetchildId].location.speed,
+                        maxSpeed:childs[data.targetchildId].location.maxSpeed
                     }));
                 }
                 else{
@@ -66,6 +69,7 @@ function locationWebSocket(wss) {
                         latitude: 31.5204,
                         longitude: 74.3587,
                         speed:1,
+                        maxSpeed:10
                     }));
 
                 }
