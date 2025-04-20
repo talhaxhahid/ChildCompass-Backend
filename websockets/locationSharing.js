@@ -1,4 +1,3 @@
-const WebSocket = require('ws');
 
 function locationWebSocket(wss) {
 
@@ -17,10 +16,6 @@ function locationWebSocket(wss) {
       
         return `${hours}:${formattedMinutes} ${ampm}`;
       }
-      
-
-      
-    
 
     let childs = {};
     let parents = {};
@@ -31,7 +26,7 @@ function locationWebSocket(wss) {
             const data = JSON.parse(message);
 
             if (data.type === 'register_child') {
-                childs[data.childId] = { ws, location: null };
+                childs[data.childId] = { ws, location: null ,history: [] };
                 console.log("Child Registered : "+data.childId);
             } else if (data.type === 'location_update') {
                 console.log(data);
@@ -43,6 +38,13 @@ function locationWebSocket(wss) {
                         maxSpeed:data.maxSpeed,
                         time:getCurrentTimeInAMPM()
                     };
+                    if(data.history){
+                        childs[data.childId].history.push({
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        time:getCurrentTimeInAMPM()
+                        })
+                    }
                     for (let parentId in parents) {
                         if (parents[parentId].targetchildId.includes(data.childId)) {
                             console.log("Location Send to Parent");
@@ -63,12 +65,44 @@ function locationWebSocket(wss) {
             } else if (data.type === 'register_parent') {
                 console.log("Parent Registered : "+data.parentId);
                 parents[data.parentId] = { ws, targetchildId: data.targetchildId };
-                if (childs[data.targetchildId] && childs[data.targetchildId].location) {
+               
+            }
+            else if (data.type === 'query_history') {
+                console.log("Child History Queried : "+ data.targetchildId );
+                
+                if (childs[data.targetchildId] && childs[data.targetchildId].history) {
+                    if(childs[data.targetchildId].history.length!=0){
                     ws.send(JSON.stringify({
                         childId: data.targetchildId,
-                        ...childs[data.targetchildId].location
+                        history: childs[data.targetchildId].history
+                    }));}
+                    else{
+                        ws.send(JSON.stringify({
+                            childId: data.targetchildId,
+                            history: [{
+                                latitude: childs[data.targetchildId].location.latitude,
+                                longitude: childs[data.targetchildId].location.longitude,
+                                time:childs[data.targetchildId].location.time
+                            }]
+                        }));
+                    }
+                    console.log("Location History SENT");
+                }
+                else
+                {
+                    ws.send(JSON.stringify({
+                        childId: data.targetchildId,
+                        history: [{
+                            latitude: 31.5204,
+                            longitude: 74.3587,
+                            time:'never'
+                        },{
+                            latitude: 31.519790,
+                            longitude: 74.358843,
+                            time:'never'
+                        }]
                     }));
-                    
+                    console.log("Location History SENT (DUMMY)");
                 }
             }
             else if (data.type === 'query_child') {
@@ -107,6 +141,8 @@ function locationWebSocket(wss) {
             }
         });
     });
+
+
 }
 
 module.exports = locationWebSocket;
