@@ -26,7 +26,7 @@ function locationWebSocket(wss) {
             const data = JSON.parse(message);
 
             if (data.type === 'register_child') {
-                childs[data.childId] = { ws, location: null ,history: [] };
+                childs[data.childId] = { ws, location: null ,history: [] ,distance:0 };
                 console.log("Child Registered : "+data.childId);
             } else if (data.type === 'location_update') {
                 console.log(data);
@@ -38,6 +38,7 @@ function locationWebSocket(wss) {
                         maxSpeed:data.maxSpeed,
                         time:getCurrentTimeInAMPM()
                     };
+                    childs[data.childId].distance+=data.distance;
                     if(data.history){
                         childs[data.childId].history.push({
                         latitude: data.latitude,
@@ -74,7 +75,8 @@ function locationWebSocket(wss) {
                     if(childs[data.targetchildId].history.length!=0){
                     ws.send(JSON.stringify({
                         childId: data.targetchildId,
-                        history: childs[data.targetchildId].history
+                        history: childs[data.targetchildId].history,
+                        distance:childs[data.targetchildId].distance,
                     }));}
                     else{
                         ws.send(JSON.stringify({
@@ -83,7 +85,9 @@ function locationWebSocket(wss) {
                                 latitude: childs[data.targetchildId].location.latitude,
                                 longitude: childs[data.targetchildId].location.longitude,
                                 time:childs[data.targetchildId].location.time
-                            }]
+                            }],
+                            distance:childs[data.targetchildId].distance,
+
                         }));
                     }
                     console.log("Location History SENT");
@@ -100,7 +104,8 @@ function locationWebSocket(wss) {
                             latitude: 31.519790,
                             longitude: 74.358843,
                             time:'never'
-                        }]
+                        }],
+                        distance:1,
                     }));
                     console.log("Location History SENT (DUMMY)");
                 }

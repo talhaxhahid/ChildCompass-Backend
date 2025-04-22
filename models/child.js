@@ -5,6 +5,9 @@ const ChildSchema = new mongoose.Schema({
     age: { type: Number, required: true },
     gender: { type: String, enum: ['boy', 'girl'], required: true },
     connectionString: { type: String, unique: true },
+    appUseage :{ type:[mongoose.Schema.Types.Mixed], default: []},
+    battery:{type:Number , default:100}
+    
 });
 
 // Generate a 4-digit alphanumeric connection string
