@@ -6,7 +6,8 @@ const ChildSchema = new mongoose.Schema({
     gender: { type: String, enum: ['boy', 'girl'], required: true },
     connectionString: { type: String, unique: true },
     appUseage :{ type:[mongoose.Schema.Types.Mixed], default: []},
-    battery:{type:Number , default:100}
+    battery:{type:Number , default:100},
+    geofenceLocations :{ type:[mongoose.Schema.Types.Mixed], default: []},
     
 });
 

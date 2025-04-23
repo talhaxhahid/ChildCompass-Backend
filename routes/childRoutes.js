@@ -188,7 +188,7 @@ router.get('/childUsage/:childId', async (req, res) => {
             data: {
                 name: child.name,
                 appUseage: child.appUseage || [],
-                battery: child.battery
+                battery: child.battery || 0
             }
         });
     } catch (error) {
@@ -201,5 +201,135 @@ router.get('/childUsage/:childId', async (req, res) => {
     }
 });
 
+
+router.get('/geofenceLocations/:childId', async (req, res) => {
+    try {
+        const { childId } = req.params;
+
+        // Find the child by ID, selecting only the needed fields
+        const child = await Child.findOne({ connectionString: childId })
+            .select('geofenceLocations')
+            .lean();
+
+        if (!child) {
+            return res.status(404).json({
+                success: false,
+                message: 'Child not found with the provided ID'
+            });
+        }
+
+        
+
+        res.status(200).json({
+            success: true,
+            message: 'Child geofenceLocations data retrieved successfully',
+            data: {
+                geofenceLocations: child.geofenceLocations || [],
+               
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching child geofenceLocations:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+});
+
+
+// Log geofenceLocations endpoint
+router.post('/addGeofence', async (req, res) => {
+
+    try {
+        const { connectionString, geofenceLocations } = req.body;
+
+        
+        
+
+        // Find the child by connectionString and update their appUsage and battery
+        const updatedChild = await Child.findOneAndUpdate(
+            { connectionString: connectionString },
+            { 
+                $push: { 
+                    geofenceLocations:   geofenceLocations  
+                }
+            },
+            { new: true } // Return the updated document
+        );
+        
+
+        if (!updatedChild) {
+            return res.status(404).json({
+                success: false,
+                message: 'Child not found with the provided connectionString'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'geofenceLocations updated successfully',
+            
+        });
+
+    } catch (error) {
+        console.error('Error updating geofenceLocations:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+});
+
+
+// DELETE endpoint to remove a geofence location
+router.delete('/remove-geofence', async (req, res) => {
+    try {
+        console.log('Received request to remove geofence:', req.body);
+        
+        const { childConnectionString, geofence } = req.body;
+        
+        if (!childConnectionString || !geofence || !geofence.latitude || !geofence.longitude) {
+            console.log('Validation failed - missing required fields:', {
+                childConnectionString: !!childConnectionString,
+                geofence: !!geofence,
+                latitude: geofence?.latitude,
+                longitude: geofence?.longitude
+            });
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+
+        console.log('Attempting to remove geofence for child:', childConnectionString);
+        console.log('Geofence to remove:', geofence);
+
+        const updatedChild = await Child.findOneAndUpdate(
+            { connectionString: childConnectionString },
+            { 
+                $pull: { 
+                    geofenceLocations: { 
+                        latitude: geofence.latitude,
+                        longitude: geofence.longitude
+                    } 
+                } 
+            },
+            { new: true }
+        );
+
+        if (!updatedChild) {
+            console.log('Child not found with connection string:', childConnectionString);
+            return res.status(404).json({ error: "Child not found" });
+        }
+
+        console.log('Geofence removed successfully. Updated child:', updatedChild);
+        res.status(200).json({
+            message: "Geofence removed successfully"
+        });
+    } catch (error) {
+        console.error("Error removing geofence:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
 
 module.exports = router;
