@@ -63,7 +63,7 @@ router.post('/send', async (req, res) => {
                 const notificationPayload = {
                     token: receiver.fcm,
                     notification: {
-                        title: `New message from ${message.senderName}`,
+                        title: `New message from ${senderName}`,
                         body: content.length > 30 ? content.substring(0, 30) + '...' : content
                     },
                     data: {
