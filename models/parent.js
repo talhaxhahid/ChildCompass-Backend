@@ -14,7 +14,8 @@ const ParentSchema = new mongoose.Schema({
     password: { type: String, required: true },
     verificationCode: { type: String, required: false }, 
     verificationCodeExpiration: { type: Date, required: false },
-    childConnectionStrings: [{ type: String }],  // Array to hold multiple child connection strings
+    childConnectionStrings: [{ type: String }],  
+    fcm: { type: String, default:'' },
 });
 
 ParentSchema.pre('save', async function (next) {

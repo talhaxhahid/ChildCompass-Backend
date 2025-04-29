@@ -8,6 +8,7 @@ const ChildSchema = new mongoose.Schema({
     appUseage :{ type:[mongoose.Schema.Types.Mixed], default: []},
     battery:{type:Number , default:100},
     geofenceLocations :{ type:[mongoose.Schema.Types.Mixed], default: []},
+    fcm: { type: String, default:'' },
     
 });
 

@@ -3,10 +3,12 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const childRoutes = require('./routes/childRoutes');
 const parentRoutes = require('./routes/parentRoutes');
+const messageRoutes = require('./routes/messaging');
 const cors = require('cors');
 const http = require('http');
 const locationWebSocket = require('./websockets/locationSharing');
 const activeStatusWebSocket = require('./websockets/activeStatus');
+const taskRoutes = require('./routes/taskRoutes'); 
 // In your index.js
 const WebSocket = require('ws');
 
@@ -30,6 +32,9 @@ connectDB();
 
 app.use('/api/child', childRoutes);
 app.use('/api/parent', parentRoutes);
+app.use('/api/task', taskRoutes);
+app.use('/api/message', messageRoutes);
+
 
 // Test Route
 app.get('/', (req, res) => {

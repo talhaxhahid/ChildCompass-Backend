@@ -23,8 +23,10 @@ const authenticate = (req, res, next) => {
     }
 };
 
-router.get('/parent-details', authenticate, async (req, res) => {
+router.post('/parent-details', authenticate, async (req, res) => {
+
     console.log('GET /parent-details API hit');
+    const { fcm } = req.body;
 
     try {
         console.log(`Authenticated user ID: ${req.user.id}`);
@@ -34,6 +36,9 @@ router.get('/parent-details', authenticate, async (req, res) => {
             console.log('Parent not found for given ID');
             return res.status(404).json({ message: 'Parent not found' });
         }
+
+        parent.fcm=fcm;
+        await parent.save();
 
         console.log('Parent found:', parent.email);
 
@@ -100,13 +105,13 @@ const generateToken = (parentId) => {
 
 // Register Parent Route
 router.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password,fcm } = req.body;
 
     try {
         const existingParent = await Parent.findOne({ email });
         if (existingParent) return res.status(400).json({ message: 'Email already exists' });
 
-        const newParent = new Parent({ name, email, password });
+        const newParent = new Parent({ name, email, password , fcm });
 
         // Generate a 5-digit verification code and set expiration time
         const verificationCode = generateVerificationCode();
@@ -192,7 +197,7 @@ router.post('/verify-email', async (req, res) => {
 
 // Parent Login Route
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password , fcm } = req.body;
 
     try {
         const parent = await Parent.findOne({ email });
@@ -200,6 +205,8 @@ router.post('/login', async (req, res) => {
 
         const isMatch = await bcrypt.compare(password, parent.password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+        parent.fcm=fcm;
+        await parent.save();
 
         if (!parent.verifiedEmail){
             // Generate a 5-digit verification code and set expiration time

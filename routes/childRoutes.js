@@ -6,12 +6,12 @@ const mongoose = require('mongoose');
 
 // Register Child
 router.post('/register', async (req, res) => {
-    const { name, age, gender } = req.body;
+    const { name, age, gender,fcm } = req.body;
     
     console.log(req.body);
     console.log(name +" "+age+" "+ gender);
     try {
-        const newChild = new Child({ name, age, gender });
+        const newChild = new Child({ name, age, gender ,fcm });
         await newChild.save();
 
         // Include the auto-generated connection string in the response
