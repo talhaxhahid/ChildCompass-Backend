@@ -78,7 +78,7 @@ function locationWebSocket(wss) {
                         history: childs[data.targetchildId].history,
                         distance:childs[data.targetchildId].distance,
                     }));}
-                    else{
+                    else if(childs[data.targetchildId].location.latitude){
                         ws.send(JSON.stringify({
                             childId: data.targetchildId,
                             history: [{
@@ -89,6 +89,22 @@ function locationWebSocket(wss) {
                             distance:childs[data.targetchildId].distance,
 
                         }));
+                    }
+                    else{
+                        ws.send(JSON.stringify({
+                            childId: data.targetchildId,
+                            history: [{
+                                latitude: 31.5204,
+                                longitude: 74.3587,
+                                time:'never'
+                            },{
+                                latitude: 31.519790,
+                                longitude: 74.358843,
+                                time:'never'
+                            }],
+                            distance:1,
+                        }));
+                        console.log("Location History SENT (DUMMY)");
                     }
                     console.log("Location History SENT");
                 }
