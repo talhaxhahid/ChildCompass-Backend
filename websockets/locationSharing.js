@@ -78,18 +78,6 @@ function locationWebSocket(wss) {
                         history: childs[data.targetchildId].history,
                         distance:childs[data.targetchildId].distance,
                     }));}
-                    else if(childs[data.targetchildId].location.latitude){
-                        ws.send(JSON.stringify({
-                            childId: data.targetchildId,
-                            history: [{
-                                latitude: childs[data.targetchildId].location.latitude,
-                                longitude: childs[data.targetchildId].location.longitude,
-                                time:childs[data.targetchildId].location.time
-                            }],
-                            distance:childs[data.targetchildId].distance,
-
-                        }));
-                    }
                     else{
                         ws.send(JSON.stringify({
                             childId: data.targetchildId,
